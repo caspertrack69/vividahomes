@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import heroImage from "@/assets/hero-vivida-homes.jpg";
+
+// Hanya impor gambar yang benar-benar ada
+import heroImage1 from "@/assets/hero-vivida-homes.jpg";
 
 const houseTypes = {
   elara: {
@@ -29,6 +31,74 @@ const houseTypes = {
 const Index = () => {
   const [openModal, setOpenModal] = useState<null | "elara" | "lyra">(null);
   const selectedHouse = openModal ? houseTypes[openModal] : null;
+
+  // --- LOGIKA SLIDER ---
+
+  // Data slides dengan URL placeholder sebagai string
+  const slides = [
+    {
+      image: heroImage1, // Ini dari import karena filenya ada
+      alt: "Fasad rumah modern Vivida Homes",
+      title: "Hidup Modern, Tenang, dan Terhubung di Vivida Homes",
+      description: "Rumah bergaya Skandinavia dengan fasilitas premium untuk hidup yang lebih nyaman.",
+      button: {
+        text: "Unduh E-Brosur",
+        href: "/Vivida-Homes-Brosur.pdf",
+        download: true,
+      },
+    },
+    {
+      // PERBAIKAN: Langsung gunakan URL string, bukan variabel import
+      image: "https://placehold.co/1280x720/F8F9FA/1D2939?text=Tipe+Elara",
+      alt: "Interior Tipe Elara yang elegan",
+      title: "Tipe Elara: Efisiensi dan Gaya",
+      description: "Desain fungsional untuk keluarga aktif yang dinamis.",
+      button: {
+        text: "Lihat Tipe Elara",
+        onClick: () => setOpenModal("elara"),
+      },
+    },
+    {
+      // PERBAIKAN: Langsung gunakan URL string, bukan variabel import
+      image: "https://placehold.co/1280x720/EBF3FF/1D2939?text=Tipe+Lyra",
+      alt: "Ruang kerja di Tipe Lyra",
+      title: "Tipe Lyra: Luas dan Produktif",
+      description: "Dilengkapi ruang kerja khusus dan siap untuk smart home.",
+      button: {
+        text: "Lihat Tipe Lyra",
+        onClick: () => setOpenModal("lyra"),
+      },
+    },
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const SLIDE_DELAY = 5000;
+
+  const resetTimeout = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+  };
+  
+  useEffect(() => {
+    resetTimeout();
+    timeoutRef.current = setTimeout(
+      () =>
+        setCurrentIndex((prevIndex) =>
+          prevIndex === slides.length - 1 ? 0 : prevIndex + 1
+        ),
+      SLIDE_DELAY
+    );
+    return () => {
+      resetTimeout();
+    };
+  }, [currentIndex, slides.length]);
+  
+  const goToSlide = (slideIndex: number) => {
+    setCurrentIndex(slideIndex);
+  };
+
   return (
     <div>
       <header className="border-b border-border">
@@ -43,45 +113,70 @@ const Index = () => {
       </header>
 
       <main>
-        {/* Hero */}
         <section aria-labelledby="hero-heading" className="relative">
           <div className="mr-container py-10 md:py-16">
-            <div className="relative overflow-hidden rounded-lg border border-border">
-              <img
-                src={heroImage}
-                alt="Fasad rumah gaya Skandinavia di Vivida Homes saat golden hour, hangat dan aspiratif"
-                className="w-full h-[420px] md:h-[560px] object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-6 md:p-10">
-                <h1 id="hero-heading" className="text-4xl font-bold leading-tight md:text-5xl max-w-3xl">
-                  Hidup Modern, Tenang, dan Terhubung di Vivida Homes
-                </h1>
-                <p className="mt-4 text-xl text-body max-w-2xl">
-                  Rumah bergaya Skandinavia dengan cahaya alami maksimal, 5 menit ke gerbang tol dan 10 menit ke pusat bisnis—fasilitas premium untuk hidup yang lebih nyaman.
-                </p>
-                <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                  <Button size="lg" asChild>
-                    <a href="/Vivida-Homes-Brosur.pdf" download>
-                      Unduh E-Brosur
-                    </a>
-                  </Button>
-                  <Button size="lg" variant="secondary" asChild>
-                    <a href="https://wa.me/6285806391116?text=Halo%20Vivida%20Homes,%20saya%20ingin%20menjadwalkan%20kunjungan." target="_blank">
-  Jadwalkan Kunjungan
-</a>
+            <div className="relative w-full overflow-hidden rounded-lg border border-border aspect-video">
+              
+              <div className="w-full h-full">
+                {slides.map((slide, slideIndex) => (
+                  <div
+                    key={slideIndex}
+                    className="absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out"
+                    style={{ opacity: slideIndex === currentIndex ? 1 : 0 }}
+                  >
+                    <img
+                      src={slide.image} // `src` sekarang bisa menerima variabel import atau URL string
+                      alt={slide.alt}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
 
+              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
+
+              <div className="absolute inset-y-0 left-0 flex flex-col justify-center md:justify-end p-6 md:p-8 lg:p-10 w-full md:w-2/3 lg:max-w-2xl">
+                <h1 id="hero-heading" className="hidden md:block text-4xl lg:text-5xl font-bold leading-tight">
+                  {slides[currentIndex].title}
+                </h1>
+                <p className="hidden md:block mt-2 text-lg lg:text-xl text-body">
+                  {slides[currentIndex].description}
+                </p>
+
+                <div className="flex justify-center md:justify-start md:mt-6">
+                  <Button
+                    size="lg"
+                    onClick={slides[currentIndex].button.onClick}
+                    asChild={!slides[currentIndex].button.onClick}
+                  >
+                    {slides[currentIndex].button.href ? (
+                      <a href={slides[currentIndex].button.href} download={slides[currentIndex].button.download}>
+                        {slides[currentIndex].button.text}
+                      </a>
+                    ) : (
+                      <span>{slides[currentIndex].button.text}</span>
+                    )}
                   </Button>
                 </div>
-                <p className="sr-only" id="hero-image-desc">
-                  Hero image: Fasad rumah Skandinavia "Vivida Homes" saat golden hour, hangat, aspiratif, menonjolkan kaca besar, material kayu terang, dan lanskap minimalis.
-                </p>
+              </div>
+
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                {slides.map((_, slideIndex) => (
+                  <button
+                    key={slideIndex}
+                    onClick={() => goToSlide(slideIndex)}
+                    className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                      currentIndex === slideIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/75'
+                    }`}
+                    aria-label={`Go to slide ${slideIndex + 1}`}
+                  />
+                ))}
               </div>
             </div>
           </div>
         </section>
 
-        {/* Key Features */}
+        {/* ... Sisa konten halaman Anda ... */}
         <section id="fasilitas" aria-labelledby="features-heading" className="py-12 md:py-16">
           <div className="mr-container">
             <h2 id="features-heading" className="text-2xl font-semibold mb-6">Keunggulan Utama</h2>
@@ -102,12 +197,10 @@ const Index = () => {
           </div>
         </section>
 
-        {/* House Types */}
         <section id="tipe-rumah" aria-labelledby="types-heading" className="py-12 md:py-16">
           <div className="mr-container">
             <h2 id="types-heading" className="text-2xl font-semibold mb-6">Pilihan Tipe Rumah</h2>
             <div className="grid md:grid-cols-2 gap-6">
-              {/* Card 1: Elara */}
               <article className="mr-card group">
                 <img
                   src="https://placehold.co/600x400/F8F9FA/1D2939?text=Tipe+Elara"
@@ -128,8 +221,6 @@ const Index = () => {
                   </div>
                 </div>
               </article>
-
-              {/* Card 2: Lyra */}
               <article className="mr-card group">
                 <img
                   src="https://placehold.co/600x400/F8F9FA/1D2939?text=Tipe+Lyra"
@@ -153,61 +244,8 @@ const Index = () => {
             </div>
           </div>
         </section>
-
-        {/* Gallery Descriptions for AI */}
-        <section aria-labelledby="gallery-heading" className="py-12 md:py-16">
-          <div className="mr-container">
-            <h2 id="gallery-heading" className="text-2xl font-semibold mb-4">Deskripsi Render 3D</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <article className="mr-card p-6">
-                <h3 className="text-lg font-semibold">Interior — Ruang Keluarga</h3>
-                <p className="mt-2 text-body">A 3D rendering of the living room in 'Vivida Homes'. The style is Scandinavian, with light wood floors, white walls (neutral.background), and a large window letting in natural light. A comfortable grey sofa is accented with a single pillow in the primary.main blue color (#2563EB). The space is minimalist and uncluttered.</p>
-              </article>
-              <article className="mr-card p-6">
-                <h3 className="text-lg font-semibold">Eksterior — Jalur Jogging Danau</h3>
-                <p className="mt-2 text-body">A 3D rendering of the lakeside jogging track at 'Vivida Homes'. The track is clean and paved, running alongside a calm lake. In the background, the modern architecture of the houses is visible through lush, green landscaping. The mood is serene and healthy.</p>
-              </article>
-            </div>
-          </div>
-        </section>
-
-        {/* Final CTA */}
-        <section id="cta" aria-labelledby="cta-heading" className="bg-subtle">
-          <div className="mr-container p-12">
-            <h2 id="cta-heading" className="text-3xl font-semibold">Siap Memulai Hidup Ideal Anda?</h2>
-            <p className="mt-3 text-body max-w-2xl">
-              Unduh e-brosur untuk detail lengkap, denah lantai, spesifikasi material, dan penawaran eksklusif. Dapatkan informasi terbaru dan jadwalkan kunjungan dengan mudah.
-            </p>
-            <div className="mt-6">
-              <Button size="lg" asChild>
-                <a href="/Vivida-Homes-Brosur.pdf" download>
-                  Unduh E-Brosur Sekarang
-                </a>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* Jadwalkan Kunjungan */}
-        <section id="kunjungan" aria-labelledby="visit-heading" className="py-12 md:py-16">
-          <div className="mr-container text-center max-w-3xl">
-            <h2 id="visit-heading" className="text-3xl font-semibold">Rasakan Langsung Kemewahan dan Kenyamanannya.</h2>
-            <p className="mt-3 text-body">
-              Kunjungi show unit kami dan nikmati pengalaman langsung kualitas material, tata ruang fungsional, dan suasana lingkungan Vivida Homes.
-            </p>
-            <div className="mt-6">
-              <Button size="lg" variant="secondary" asChild>
-                <a href="https://wa.me/6285806391116?text=Halo%20Vivida%20Homes,%20saya%20ingin%20menjadwalkan%20kunjungan." target="_blank">
-  Jadwalkan Kunjungan
-</a>
-
-              </Button>
-            </div>
-          </div>
-        </section>
       </main>
 
-      {/* Detail Modal */}
       {selectedHouse && (
         <div className="fixed inset-0 z-50">
           <div
@@ -234,7 +272,6 @@ const Index = () => {
                 {selectedHouse.name}
               </h2>
 
-              {/* Mini Gallery */}
               <div className="mt-4">
                 <img
                   src={selectedHouse.images[0]}
@@ -255,7 +292,6 @@ const Index = () => {
                 </div>
               </div>
 
-              {/* Specifications */}
               <div className="mt-6">
                 <h3 className="text-base font-semibold">Spesifikasi</h3>
                 <ul className="mt-2 grid grid-cols-2 gap-y-2 text-body text-sm">
@@ -265,7 +301,6 @@ const Index = () => {
                 </ul>
               </div>
 
-              {/* Description */}
               <div className="mt-6">
                 <h3 className="text-base font-semibold">Deskripsi</h3>
                 <p className="mt-2 text-body text-sm">
@@ -276,9 +311,8 @@ const Index = () => {
               <div className="mt-8">
                 <Button size="lg" asChild>
                   <a href="https://wa.me/6285806391116?text=Halo%20Vivida%20Homes,%20saya%20ingin%20menjadwalkan%20kunjungan." target="_blank">
-  Jadwalkan Kunjungan
-</a>
-
+                    Jadwalkan Kunjungan
+                  </a>
                 </Button>
               </div>
             </div>
